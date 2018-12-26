@@ -2,5 +2,8 @@
     <string name="app_name">CouchDB</string>
     <string name="my_message">My Message</string>
     <string name="sorry_no_data">Sorry No Data</string>
-    <string name="delete">Delete</string>
+    <string name="update_users">Update All Users</string>
+    <string name="delete_users">Delete All Users</string>
+    <string name="update_msgs">Update All Messages</string>
+    <string name="delete_msgs">Delete All Messages</string>
 </resources>

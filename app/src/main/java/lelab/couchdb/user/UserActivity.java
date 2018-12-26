@@ -72,7 +72,7 @@ public class UserActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu);
+        getMenuInflater().inflate(R.menu.user_menu, menu);
         return true;
     }
 
@@ -80,17 +80,48 @@ public class UserActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
+            case R.id.update:
+                long start1 = System.currentTimeMillis();
+                updateAllUsers();
+                long end1 = System.currentTimeMillis();
+                double time1 = (end1 - start1);
+                Log.d(TAG, "Updating all users takes: " + time1 + "ms");
+                getUserDbData();
+                return true;
             case R.id.delete:
-                long start = System.currentTimeMillis();
+                long start2 = System.currentTimeMillis();
                 deleteAllUsers();
-                long end = System.currentTimeMillis();
-                double time = (end - start);
-                Log.d(TAG, "Deleting all users takes: " + time + "ms");
+                long end2 = System.currentTimeMillis();
+                double time2 = (end2 - start2);
+                Log.d(TAG, "Deleting all users takes: " + time2 + "ms");
                 //try to get from db rather than showing "no data" all together
                 getUserDbData();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void updateAllUsers() {
+        List<String> idList = userAdapter.getIds();
+        for (String id : idList) {
+            String phNo = getRandomNo(90000);
+            User user = new User(id, "Nabil Updated " + id, phNo, "", "", true, false, false, "", "");
+
+            ObjectMapper objectMapper1 = new ObjectMapper();
+            objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            HashMap<String, Object> userMap = objectMapper1.convertValue(user, HashMap.class);
+            MutableDocument doc = new MutableDocument(id, userMap);
+            doc.setString("type", DatabaseManager.USER_TABLE);
+
+            //Save document to database.
+            try {
+                dbMgr.database.save(doc);
+                //Log.d(TAG, "saved");
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -118,7 +149,7 @@ public class UserActivity extends AppCompatActivity {
 
             HashMap<String, Object> userMap = objectMapper1.convertValue(user, HashMap.class);
             MutableDocument doc = new MutableDocument(id, userMap);
-            doc.setString("key", DatabaseManager.USER_TABLE);
+            doc.setString("type", DatabaseManager.USER_TABLE);
 
             //Save document to database.
             try {
@@ -131,7 +162,7 @@ public class UserActivity extends AppCompatActivity {
     }
 
     private void getUserDbData() {
-        Expression key = Expression.property("key");
+        Expression key = Expression.property("type");
         Query query = QueryBuilder.
                 select(SelectResult.all()).
                 from(DataSource.database(dbMgr.database))

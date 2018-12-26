@@ -77,7 +77,7 @@ public class MessageActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu);
+        getMenuInflater().inflate(R.menu.message_menu, menu);
         return true;
     }
 
@@ -85,6 +85,14 @@ public class MessageActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
+            case R.id.update:
+                long start1 = System.currentTimeMillis();
+                updateAllMessages();
+                long end1 = System.currentTimeMillis();
+                double time1 = (end1 - start1);
+                Log.d(UserActivity.TAG, "Updating all messages takes: " + time1 + "ms");
+                getMessageDbData();
+                return true;
             case R.id.delete:
                 long start = System.currentTimeMillis();
                 deleteAllMessages();
@@ -96,6 +104,32 @@ public class MessageActivity extends AppCompatActivity {
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void updateAllMessages() {
+        List<String> idList = messageAdapter.getIds();
+        for (String id : idList) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:sss", Locale.US);
+            String currentDT = sdf.format(new Date());
+
+            Message message = new Message(id, "", "", "", "", "", "", false, "", "", "", "", currentDT, currentDT, "");
+
+            ObjectMapper objectMapper1 = new ObjectMapper();
+            objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            HashMap<String, Object> messageMap = objectMapper1.convertValue(message, HashMap.class);
+            MutableDocument doc = new MutableDocument(id, messageMap);
+            doc.setString("type", DatabaseManager.MESSAGE_TABLE);
+            doc.setString("userID", userID);
+
+            //Save document to database.
+            try {
+                dbMgr.database.save(doc);
+                //Log.d(UserActivity.TAG, "saved");
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -125,7 +159,7 @@ public class MessageActivity extends AppCompatActivity {
 
             HashMap<String, Object> messageMap = objectMapper1.convertValue(message, HashMap.class);
             MutableDocument doc = new MutableDocument(id, messageMap);
-            doc.setString("key", DatabaseManager.MESSAGE_TABLE);
+            doc.setString("type", DatabaseManager.MESSAGE_TABLE);
             doc.setString("userID", userID);
 
             //Save document to database.
@@ -139,7 +173,7 @@ public class MessageActivity extends AppCompatActivity {
     }
 
     private void getMessageDbData() {
-        Expression expression1 = Expression.property("key");
+        Expression expression1 = Expression.property("type");
         Expression expression2 = Expression.property("userID");
         Query query = QueryBuilder.
                 select(SelectResult.all()).
