@@ -10,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DataSource;
@@ -75,6 +76,9 @@ public class UserActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
+            case R.id.select:
+                selectData();
+                return true;
             case R.id.update:
                 updateAllUsers();
                 getUserDbData();
@@ -86,6 +90,26 @@ public class UserActivity extends AppCompatActivity {
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void selectData() {
+        String anId = userAdapter.getAnId();
+        Expression key = Expression.property("type");
+        Expression id = Expression.property("id");
+        Query query = QueryBuilder.
+                select(SelectResult.all()).
+                from(DataSource.database(dbMgr.database))
+                .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)).and(id.equalTo(Expression.string(anId))));
+        try {
+            long start2 = System.currentTimeMillis();
+            query.execute();
+            long end2 = System.currentTimeMillis();
+            double time2 = (end2 - start2);
+            Log.d(TAG, "Select * where id: " + anId + " takes: " + time2 + "ms");
+            Toast.makeText(this, "Select * where id: " + anId + " takes: " + time2 + "ms", Toast.LENGTH_SHORT).show();
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
         }
     }
 
@@ -101,6 +125,7 @@ public class UserActivity extends AppCompatActivity {
             HashMap<String, Object> userMap = objectMapper1.convertValue(user, HashMap.class);
             MutableDocument doc = new MutableDocument(id, userMap);
             doc.setString("type", DatabaseManager.USER_TABLE);
+            doc.setString("id", id);
 
             //Save document to database.
             try {
@@ -141,6 +166,7 @@ public class UserActivity extends AppCompatActivity {
             HashMap<String, Object> userMap = objectMapper1.convertValue(user, HashMap.class);
             MutableDocument doc = new MutableDocument(id, userMap);
             doc.setString("type", DatabaseManager.USER_TABLE);
+            doc.setString("id", id);
 
             //Save document to database.
             try {

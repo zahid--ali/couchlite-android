@@ -44,6 +44,10 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         return mContext;
     }
 
+    public String getAnId() {
+        return users.size() == 0 ? "" : users.get(0).getId();
+    }
+
     public List<String> getIds() {
         List<String> idList = new ArrayList<>();
         for (User user1 : users) {
