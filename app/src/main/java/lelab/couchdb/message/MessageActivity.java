@@ -36,6 +36,7 @@ import lelab.couchdb.model.Message;
 import lelab.couchdb.user.UserActivity;
 
 public class MessageActivity extends AppCompatActivity {
+    private static final int count = 100;
     private String userID;
     private MessageAdapter messageAdapter;
     private TextView tvNoData;
@@ -60,30 +61,39 @@ public class MessageActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String id = getRandomNo(10000);
-                SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:sss", Locale.US);
-                String currentDT = sdf.format(new Date());
-
-                Message message = new Message(id, "", "", "", "", "", "", false, "", "", "", "", currentDT, currentDT, "");
-
-                ObjectMapper objectMapper1 = new ObjectMapper();
-                objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-                HashMap<String, Object> messageMap = objectMapper1.convertValue(message, HashMap.class);
-                MutableDocument doc = new MutableDocument(messageMap);
-                doc.setString("key", DatabaseManager.MESSAGE_TABLE);
-                doc.setString("userID", userID);
-
-                //Save document to database.
-                try {
-                    dbMgr.database.save(doc);
-                    Log.d(UserActivity.TAG, "saved");
-                } catch (CouchbaseLiteException e) {
-                    e.printStackTrace();
-                }
+                long start = System.currentTimeMillis();
+                addMessageToDb();
+                long end = System.currentTimeMillis();
+                double time = (end - start);
+                double avg = time / count;
+                Log.d(UserActivity.TAG, "Adding " + count + " data takes: " + time + "ms; so avg. time is: " + avg + "ms");
                 getMessageDbData();
             }
         });
+    }
+
+    private void addMessageToDb() {
+        String id = getRandomNo(10000);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:sss", Locale.US);
+        String currentDT = sdf.format(new Date());
+
+        Message message = new Message(id, "", "", "", "", "", "", false, "", "", "", "", currentDT, currentDT, "");
+
+        ObjectMapper objectMapper1 = new ObjectMapper();
+        objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        HashMap<String, Object> messageMap = objectMapper1.convertValue(message, HashMap.class);
+        MutableDocument doc = new MutableDocument(messageMap);
+        doc.setString("key", DatabaseManager.MESSAGE_TABLE);
+        doc.setString("userID", userID);
+
+        //Save document to database.
+        try {
+            dbMgr.database.save(doc);
+            //Log.d(UserActivity.TAG, "saved");
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
     }
 
     private void getMessageDbData() {

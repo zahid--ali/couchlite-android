@@ -32,6 +32,7 @@ import lelab.couchdb.db.DatabaseManager;
 import lelab.couchdb.model.User;
 
 public class UserActivity extends AppCompatActivity {
+    private static final int count = 100;
     public static final String TAG = "CouchDbApp";
     private UserAdapter userAdapter;
     private TextView tvNoData;
@@ -55,27 +56,38 @@ public class UserActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String id = getRandomNo(10000);
-                String phNo = getRandomNo(90000);
-                User user = new User(id, "Nabil " + id, phNo, "", "", true, false, false, "", "");
-
-                ObjectMapper objectMapper1 = new ObjectMapper();
-                objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-                HashMap<String, Object> userMap = objectMapper1.convertValue(user, HashMap.class);
-                MutableDocument doc = new MutableDocument(userMap);
-                doc.setString("key", DatabaseManager.USER_TABLE);
-
-                //Save document to database.
-                try {
-                    dbMgr.database.save(doc);
-                    Log.d(TAG, "saved");
-                } catch (CouchbaseLiteException e) {
-                    e.printStackTrace();
-                }
+                long start = System.currentTimeMillis();
+                addUserToDb();
+                long end = System.currentTimeMillis();
+                double time = (end - start);
+                double avg = time / count;
+                Log.d(TAG, "Adding " + count + " data takes: " + time + "ms; so avg. time is: " + avg + "ms");
                 getUserDbData();
             }
         });
+    }
+
+    private void addUserToDb() {
+        for (int i = 0; i < count; i++) {
+            String id = getRandomNo(10000);
+            String phNo = getRandomNo(90000);
+            User user = new User(id, "Nabil " + id, phNo, "", "", true, false, false, "", "");
+
+            ObjectMapper objectMapper1 = new ObjectMapper();
+            objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            HashMap<String, Object> userMap = objectMapper1.convertValue(user, HashMap.class);
+            MutableDocument doc = new MutableDocument(userMap);
+            doc.setString("key", DatabaseManager.USER_TABLE);
+
+            //Save document to database.
+            try {
+                dbMgr.database.save(doc);
+                //Log.d(TAG, "saved");
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void getUserDbData() {
