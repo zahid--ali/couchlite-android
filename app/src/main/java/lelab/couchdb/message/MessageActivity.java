@@ -64,12 +64,7 @@ public class MessageActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                long start = System.currentTimeMillis();
                 addMessageToDb();
-                long end = System.currentTimeMillis();
-                double time = (end - start);
-                double avg = time / count;
-                Log.d(UserActivity.TAG, "Adding " + count + " data takes: " + time + "ms; so avg. time is: " + avg + "ms");
                 getMessageDbData();
             }
         });
@@ -86,19 +81,11 @@ public class MessageActivity extends AppCompatActivity {
         int id = item.getItemId();
         switch (id) {
             case R.id.update:
-                long start1 = System.currentTimeMillis();
                 updateAllMessages();
-                long end1 = System.currentTimeMillis();
-                double time1 = (end1 - start1);
-                Log.d(UserActivity.TAG, "Updating all messages takes: " + time1 + "ms");
                 getMessageDbData();
                 return true;
             case R.id.delete:
-                long start = System.currentTimeMillis();
                 deleteAllMessages();
-                long end = System.currentTimeMillis();
-                double time = (end - start);
-                Log.d(UserActivity.TAG, "Deleting all messages takes: " + time + "ms");
                 //try to get from db rather than showing "no data" all together
                 getMessageDbData();
                 return true;
@@ -139,7 +126,11 @@ public class MessageActivity extends AppCompatActivity {
             Document doc = dbMgr.database.getDocument(id);
 
             try {
+                long start = System.currentTimeMillis();
                 dbMgr.database.delete(doc);
+                long end = System.currentTimeMillis();
+                double time = (end - start);
+                Log.d(UserActivity.TAG, "Deleting a message takes: " + time + "ms");
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
             }
@@ -164,7 +155,11 @@ public class MessageActivity extends AppCompatActivity {
 
             //Save document to database.
             try {
+                long start = System.currentTimeMillis();
                 dbMgr.database.save(doc);
+                long end = System.currentTimeMillis();
+                double time = (end - start);
+                Log.d(UserActivity.TAG, "Adding a message takes: " + time + "ms");
                 //Log.d(UserActivity.TAG, "saved");
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();

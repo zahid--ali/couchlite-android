@@ -59,12 +59,7 @@ public class UserActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                long start = System.currentTimeMillis();
                 addUserToDb();
-                long end = System.currentTimeMillis();
-                double time = (end - start);
-                double avg = time / count;
-                Log.d(TAG, "Adding " + count + " data takes: " + time + "ms; so avg. time is: " + avg + "ms");
                 getUserDbData();
             }
         });
@@ -81,19 +76,11 @@ public class UserActivity extends AppCompatActivity {
         int id = item.getItemId();
         switch (id) {
             case R.id.update:
-                long start1 = System.currentTimeMillis();
                 updateAllUsers();
-                long end1 = System.currentTimeMillis();
-                double time1 = (end1 - start1);
-                Log.d(TAG, "Updating all users takes: " + time1 + "ms");
                 getUserDbData();
                 return true;
             case R.id.delete:
-                long start2 = System.currentTimeMillis();
                 deleteAllUsers();
-                long end2 = System.currentTimeMillis();
-                double time2 = (end2 - start2);
-                Log.d(TAG, "Deleting all users takes: " + time2 + "ms");
                 //try to get from db rather than showing "no data" all together
                 getUserDbData();
                 return true;
@@ -131,7 +118,11 @@ public class UserActivity extends AppCompatActivity {
             Document doc = dbMgr.database.getDocument(id);
 
             try {
+                long start2 = System.currentTimeMillis();
                 dbMgr.database.delete(doc);
+                long end2 = System.currentTimeMillis();
+                double time2 = (end2 - start2);
+                Log.d(TAG, "Deleting a user takes: " + time2 + "ms");
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
             }
@@ -153,7 +144,11 @@ public class UserActivity extends AppCompatActivity {
 
             //Save document to database.
             try {
+                long start = System.currentTimeMillis();
                 dbMgr.database.save(doc);
+                long end = System.currentTimeMillis();
+                double time = (end - start);
+                Log.d(TAG, "Adding a data takes: " + time + "ms");
                 //Log.d(TAG, "saved");
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
