@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">CouchDB</string>
+    <string name="my_message">My Message</string>
+</resources>
