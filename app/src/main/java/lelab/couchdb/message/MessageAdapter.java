@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -37,6 +38,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
 
     private Context getContext() {
         return mContext;
+    }
+
+    public List<String> getIds() {
+        List<String> idList = new ArrayList<>();
+        for (Message message : messages) {
+            idList.add(message.getId());
+        }
+        return idList;
     }
 
     public void setMessages(List<Message> messages) {

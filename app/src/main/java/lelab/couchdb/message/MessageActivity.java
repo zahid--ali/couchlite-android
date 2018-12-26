@@ -6,12 +6,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DataSource;
 import com.couchbase.lite.Dictionary;
+import com.couchbase.lite.Document;
 import com.couchbase.lite.Expression;
 import com.couchbase.lite.MutableDocument;
 import com.couchbase.lite.Query;
@@ -36,7 +39,7 @@ import lelab.couchdb.model.Message;
 import lelab.couchdb.user.UserActivity;
 
 public class MessageActivity extends AppCompatActivity {
-    private static final int count = 100;
+    private static final int count = 10;
     private String userID;
     private MessageAdapter messageAdapter;
     private TextView tvNoData;
@@ -72,27 +75,66 @@ public class MessageActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.delete:
+                long start = System.currentTimeMillis();
+                deleteAllMessages();
+                long end = System.currentTimeMillis();
+                double time = (end - start);
+                Log.d(UserActivity.TAG, "Deleting all messages takes: " + time + "ms");
+                //try to get from db rather than showing "no data" all together
+                getMessageDbData();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void deleteAllMessages() {
+        List<String> idList = messageAdapter.getIds();
+        for (String id : idList) {
+            Document doc = dbMgr.database.getDocument(id);
+
+            try {
+                dbMgr.database.delete(doc);
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private void addMessageToDb() {
-        String id = getRandomNo(10000);
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:sss", Locale.US);
-        String currentDT = sdf.format(new Date());
+        for (int i = 0; i < count; i++) {
+            String id = getRandomNo(10000);
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:sss", Locale.US);
+            String currentDT = sdf.format(new Date());
 
-        Message message = new Message(id, "", "", "", "", "", "", false, "", "", "", "", currentDT, currentDT, "");
+            Message message = new Message(id, "", "", "", "", "", "", false, "", "", "", "", currentDT, currentDT, "");
 
-        ObjectMapper objectMapper1 = new ObjectMapper();
-        objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            ObjectMapper objectMapper1 = new ObjectMapper();
+            objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        HashMap<String, Object> messageMap = objectMapper1.convertValue(message, HashMap.class);
-        MutableDocument doc = new MutableDocument(messageMap);
-        doc.setString("key", DatabaseManager.MESSAGE_TABLE);
-        doc.setString("userID", userID);
+            HashMap<String, Object> messageMap = objectMapper1.convertValue(message, HashMap.class);
+            MutableDocument doc = new MutableDocument(id, messageMap);
+            doc.setString("key", DatabaseManager.MESSAGE_TABLE);
+            doc.setString("userID", userID);
 
-        //Save document to database.
-        try {
-            dbMgr.database.save(doc);
-            //Log.d(UserActivity.TAG, "saved");
-        } catch (CouchbaseLiteException e) {
-            e.printStackTrace();
+            //Save document to database.
+            try {
+                dbMgr.database.save(doc);
+                //Log.d(UserActivity.TAG, "saved");
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -117,9 +159,10 @@ public class MessageActivity extends AppCompatActivity {
                 messages.add(message1);
             }
             Log.d(UserActivity.TAG, ": " + messages.size());
-            if (messages.size() == 0)
+            if (messages.size() == 0) {
                 tvNoData.setVisibility(View.VISIBLE);
-            else {
+                messageAdapter.setMessages(new ArrayList<Message>());
+            } else {
                 tvNoData.setVisibility(View.GONE);
                 messageAdapter.setMessages(messages);
             }

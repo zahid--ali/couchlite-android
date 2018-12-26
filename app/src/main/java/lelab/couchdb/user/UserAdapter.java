@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,9 +44,13 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         return mContext;
     }
 
-//    public void addUser(User user) {
-//        users.add(user);
-//    }
+    public List<String> getIds() {
+        List<String> idList = new ArrayList<>();
+        for (User user1 : users) {
+            idList.add(user1.getId());
+        }
+        return idList;
+    }
 
     public void setUsers(List<User> users) {
         this.users = users;

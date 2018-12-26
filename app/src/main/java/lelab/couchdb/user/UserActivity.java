@@ -6,12 +6,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DataSource;
 import com.couchbase.lite.Dictionary;
+import com.couchbase.lite.Document;
 import com.couchbase.lite.Expression;
 import com.couchbase.lite.MutableDocument;
 import com.couchbase.lite.Query;
@@ -32,7 +35,7 @@ import lelab.couchdb.db.DatabaseManager;
 import lelab.couchdb.model.User;
 
 public class UserActivity extends AppCompatActivity {
-    private static final int count = 100;
+    private static final int count = 10;
     public static final String TAG = "CouchDbApp";
     private UserAdapter userAdapter;
     private TextView tvNoData;
@@ -67,6 +70,43 @@ public class UserActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.delete:
+                long start = System.currentTimeMillis();
+                deleteAllUsers();
+                long end = System.currentTimeMillis();
+                double time = (end - start);
+                Log.d(TAG, "Deleting all users takes: " + time + "ms");
+                //try to get from db rather than showing "no data" all together
+                getUserDbData();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void deleteAllUsers() {
+        List<String> idList = userAdapter.getIds();
+        for (String id : idList) {
+            Document doc = dbMgr.database.getDocument(id);
+
+            try {
+                dbMgr.database.delete(doc);
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private void addUserToDb() {
         for (int i = 0; i < count; i++) {
             String id = getRandomNo(10000);
@@ -77,7 +117,7 @@ public class UserActivity extends AppCompatActivity {
             objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
             HashMap<String, Object> userMap = objectMapper1.convertValue(user, HashMap.class);
-            MutableDocument doc = new MutableDocument(userMap);
+            MutableDocument doc = new MutableDocument(id, userMap);
             doc.setString("key", DatabaseManager.USER_TABLE);
 
             //Save document to database.
@@ -110,9 +150,10 @@ public class UserActivity extends AppCompatActivity {
                 users.add(user1);
             }
             Log.d(TAG, ": " + users.size());
-            if (users.size() == 0)
+            if (users.size() == 0) {
                 tvNoData.setVisibility(View.VISIBLE);
-            else {
+                userAdapter.setUsers(new ArrayList<User>());
+            } else {
                 tvNoData.setVisibility(View.GONE);
                 userAdapter.setUsers(users);
             }
