@@ -1,34 +1,21 @@
 package lelab.couchdb.model;
 
-import com.google.gson.annotations.SerializedName;
 
 public class Message {
     private String id;
-    @SerializedName("conversation_id")
     private String conversationId;
-    @SerializedName("sender_id")
     private String senderId;
-    @SerializedName("message_type")
     private String messageType;
-    @SerializedName("message_status")
     private String messageStatus;
-    @SerializedName("media_url")
     private String mediaUrl;
-    @SerializedName("media_mime_type")
     private String mediaMimeType;
-    @SerializedName("is_starred")
     private Boolean isStarred;
-    @SerializedName("media_size")
     private String mediaSize;
-    @SerializedName("mediaName")
     private String media_name;
     private String latitude;
     private String longitude;
-    @SerializedName("received_at")
     private String receivedAt;
-    @SerializedName("created_at")
     private String createdAt;
-    @SerializedName("deleted_at")
     private String deletedAt;
 
     public Message() {

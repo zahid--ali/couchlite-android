@@ -1,24 +1,16 @@
 package lelab.couchdb.model;
 
-import com.google.gson.annotations.SerializedName;
 
 public class User {
     private String id;
     private String name;
-    @SerializedName("phone_number")
     private String phoneNumber;
-    @SerializedName("image_url")
     private String imageUrl;
     private String status;
-    @SerializedName("is_active")
     private Boolean isActive;
-    @SerializedName("Is_reported")
     private Boolean isReported;
-    @SerializedName("is_blocked")
     private Boolean isBlocked;
-    @SerializedName("created_at")
     private String createdAt;
-    @SerializedName("updated_at")
     private String updatedAt;
 
     public User() {
