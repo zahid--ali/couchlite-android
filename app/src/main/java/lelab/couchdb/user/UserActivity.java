@@ -7,6 +7,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DataSource;
@@ -33,20 +34,22 @@ import lelab.couchdb.model.User;
 public class UserActivity extends AppCompatActivity {
     public static final String TAG = "CouchDbApp";
     private UserAdapter userAdapter;
+    private TextView tvNoData;
     //couch db
     private DatabaseManager dbMgr;
-    private Query query;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_activity);
+        tvNoData = findViewById(R.id.tv_no_data);
         dbMgr = new DatabaseManager(this);
 
         userAdapter = new UserAdapter(this);
         RecyclerView rvUsers = findViewById(R.id.rv_users);
         rvUsers.setAdapter(userAdapter);
         rvUsers.setLayoutManager(new LinearLayoutManager(this));
+        getUserDbData();
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -70,32 +73,40 @@ public class UserActivity extends AppCompatActivity {
                 } catch (CouchbaseLiteException e) {
                     e.printStackTrace();
                 }
-
-                Expression key = Expression.property("key");
-                query = QueryBuilder.
-                        select(SelectResult.all()).
-                        from(DataSource.database(dbMgr.database))
-                        .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)));
-                try {
-                    ResultSet results = query.execute();
-                    Result row;
-                    List<User> users = new ArrayList<>();
-                    while ((row = results.next()) != null) {
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-                        // Get dictionary corresponding to the database name
-                        Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
-                        User user1 = objectMapper.convertValue(valueMap.toMap(), User.class);
-                        users.add(user1);
-                    }
-                    Log.d(TAG, ": " + users.size());
-                    userAdapter.setUsers(users);
-                } catch (CouchbaseLiteException e) {
-                    e.printStackTrace();
-                }
+                getUserDbData();
             }
         });
+    }
+
+    private void getUserDbData() {
+        Expression key = Expression.property("key");
+        Query query = QueryBuilder.
+                select(SelectResult.all()).
+                from(DataSource.database(dbMgr.database))
+                .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)));
+        try {
+            ResultSet results = query.execute();
+            Result row;
+            List<User> users = new ArrayList<>();
+            while ((row = results.next()) != null) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+                // Get dictionary corresponding to the database name
+                Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
+                User user1 = objectMapper.convertValue(valueMap.toMap(), User.class);
+                users.add(user1);
+            }
+            Log.d(TAG, ": " + users.size());
+            if (users.size() == 0)
+                tvNoData.setVisibility(View.VISIBLE);
+            else {
+                tvNoData.setVisibility(View.GONE);
+                userAdapter.setUsers(users);
+            }
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
     }
 
     private String getRandomNo(final int max) {

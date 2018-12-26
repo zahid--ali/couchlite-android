@@ -7,6 +7,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DataSource;
@@ -37,14 +38,15 @@ import lelab.couchdb.user.UserActivity;
 public class MessageActivity extends AppCompatActivity {
     private String userID;
     private MessageAdapter messageAdapter;
+    private TextView tvNoData;
     //couch db
     private DatabaseManager dbMgr;
-    private Query query;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.message_activity);
+        tvNoData = findViewById(R.id.tv_no_data);
         userID = getIntent().getStringExtra("userID");
         dbMgr = new DatabaseManager(this);
 
@@ -52,6 +54,7 @@ public class MessageActivity extends AppCompatActivity {
         RecyclerView rvMessages = findViewById(R.id.rv_messages);
         rvMessages.setAdapter(messageAdapter);
         rvMessages.setLayoutManager(new LinearLayoutManager(this));
+        getMessageDbData();
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -78,33 +81,41 @@ public class MessageActivity extends AppCompatActivity {
                 } catch (CouchbaseLiteException e) {
                     e.printStackTrace();
                 }
-
-                Expression expression1 = Expression.property("key");
-                Expression expression2 = Expression.property("userID");
-                query = QueryBuilder.
-                        select(SelectResult.all()).
-                        from(DataSource.database(dbMgr.database))
-                        .where(expression1.equalTo(Expression.string(DatabaseManager.MESSAGE_TABLE)).and(expression2.equalTo(Expression.string(userID))));
-                try {
-                    ResultSet results = query.execute();
-                    Result row;
-                    List<Message> messages = new ArrayList<>();
-                    while ((row = results.next()) != null) {
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-                        // Get dictionary corresponding to the database name
-                        Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
-                        Message message1 = objectMapper.convertValue(valueMap.toMap(), Message.class);
-                        messages.add(message1);
-                    }
-                    Log.d(UserActivity.TAG, ": " + messages.size());
-                    messageAdapter.setMessages(messages);
-                } catch (CouchbaseLiteException e) {
-                    e.printStackTrace();
-                }
+                getMessageDbData();
             }
         });
+    }
+
+    private void getMessageDbData() {
+        Expression expression1 = Expression.property("key");
+        Expression expression2 = Expression.property("userID");
+        Query query = QueryBuilder.
+                select(SelectResult.all()).
+                from(DataSource.database(dbMgr.database))
+                .where(expression1.equalTo(Expression.string(DatabaseManager.MESSAGE_TABLE)).and(expression2.equalTo(Expression.string(userID))));
+        try {
+            ResultSet results = query.execute();
+            Result row;
+            List<Message> messages = new ArrayList<>();
+            while ((row = results.next()) != null) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+                // Get dictionary corresponding to the database name
+                Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
+                Message message1 = objectMapper.convertValue(valueMap.toMap(), Message.class);
+                messages.add(message1);
+            }
+            Log.d(UserActivity.TAG, ": " + messages.size());
+            if (messages.size() == 0)
+                tvNoData.setVisibility(View.VISIBLE);
+            else {
+                tvNoData.setVisibility(View.GONE);
+                messageAdapter.setMessages(messages);
+            }
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
     }
 
     private String getRandomNo(final int max) {
