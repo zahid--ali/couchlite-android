@@ -94,6 +94,7 @@ public class MessageActivity extends AppCompatActivity {
         }
     }
 
+    //updating technique 2
     private void updateAllMessages() {
         List<String> idList = messageAdapter.getIds();
         for (String id : idList) {

@@ -113,24 +113,52 @@ public class UserActivity extends AppCompatActivity {
         }
     }
 
+    //updating technique 1
     private void updateAllUsers() {
         List<String> idList = userAdapter.getIds();
+        Expression key = Expression.property("type");
+        Expression idExp = Expression.property("id");
+
         for (String id : idList) {
-            String phNo = getRandomNo(90000);
-            User user = new User(id, "Nabil Updated " + id, phNo, "", "", true, false, false, "", "");
-
-            ObjectMapper objectMapper1 = new ObjectMapper();
-            objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-            HashMap<String, Object> userMap = objectMapper1.convertValue(user, HashMap.class);
-            MutableDocument doc = new MutableDocument(id, userMap);
-            doc.setString("type", DatabaseManager.USER_TABLE);
-            doc.setString("id", id);
-
-            //Save document to database.
+            Query query = QueryBuilder.
+                    select(SelectResult.all()).
+                    from(DataSource.database(dbMgr.database))
+                    .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)).and(idExp.equalTo(Expression.string(id))));
             try {
-                dbMgr.database.save(doc);
-                //Log.d(TAG, "saved");
+                ResultSet results = query.execute();
+                Result row;
+                while ((row = results.next()) != null) {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+                    // Get dictionary corresponding to the database name
+                    Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
+                    User user1 = objectMapper.convertValue(valueMap.toMap(), User.class);
+                    user1.setName("Nabil Updated " + id);
+                    user1.setImageUrl("");
+                    user1.setStatus("");
+                    user1.setActive(true);
+                    user1.setReported(false);
+                    user1.setBlocked(false);
+                    user1.setCreatedAt("");
+                    user1.setUpdatedAt("");
+
+                    ObjectMapper objectMapper1 = new ObjectMapper();
+                    objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+                    HashMap<String, Object> userMap = objectMapper1.convertValue(user1, HashMap.class);
+                    MutableDocument doc = new MutableDocument(id, userMap);
+                    doc.setString("type", DatabaseManager.USER_TABLE);
+                    doc.setString("id", id);
+
+                    //Save document to database.
+                    try {
+                        dbMgr.database.save(doc);
+                        //Log.d(TAG, "saved");
+                    } catch (CouchbaseLiteException e) {
+                        e.printStackTrace();
+                    }
+                }
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
             }
