@@ -7,4 +7,6 @@
     <string name="select">Select *</string>
     <string name="update_msgs">Update All Messages</string>
     <string name="delete_msgs">Delete All Messages</string>
+    <string name="insertion_time">Avg Insertion Time</string>
+    <string name="deletion_time">Avg Deletion Time</string>
 </resources>

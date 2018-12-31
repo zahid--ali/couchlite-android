@@ -34,6 +34,7 @@ import java.util.Locale;
 import java.util.Random;
 
 import lelab.couchdb.R;
+import lelab.couchdb.TimeHelper;
 import lelab.couchdb.db.DatabaseManager;
 import lelab.couchdb.model.Message;
 import lelab.couchdb.user.UserActivity;
@@ -45,6 +46,8 @@ public class MessageActivity extends AppCompatActivity {
     private TextView tvNoData;
     //couch db
     private DatabaseManager dbMgr;
+    //Time Calculator
+    private TimeHelper timeHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +56,7 @@ public class MessageActivity extends AppCompatActivity {
         tvNoData = findViewById(R.id.tv_no_data);
         userID = getIntent().getStringExtra("userID");
         dbMgr = new DatabaseManager(this);
+        timeHelper = new TimeHelper(this, dbMgr);
 
         messageAdapter = new MessageAdapter(this);
         RecyclerView rvMessages = findViewById(R.id.rv_messages);
@@ -88,6 +92,12 @@ public class MessageActivity extends AppCompatActivity {
                 deleteAllMessages();
                 //try to get from db rather than showing "no data" all together
                 getMessageDbData();
+                return true;
+            case R.id.insertion_time:
+                timeHelper.avgInsertTimeDisplay();
+                return true;
+            case R.id.deletion_time:
+                timeHelper.avgDeleteTimeDisplay();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -131,6 +141,7 @@ public class MessageActivity extends AppCompatActivity {
                 dbMgr.database.delete(doc);
                 long end = System.currentTimeMillis();
                 double time = (end - start);
+                timeHelper.saveDeletionTime(time);
                 Log.d(UserActivity.TAG, "Deleting a message takes: " + time + "ms");
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
@@ -160,6 +171,7 @@ public class MessageActivity extends AppCompatActivity {
                 dbMgr.database.save(doc);
                 long end = System.currentTimeMillis();
                 double time = (end - start);
+                timeHelper.saveInsertionTime(time);
                 Log.d(UserActivity.TAG, "Adding a message takes: " + time + "ms");
                 //Log.d(UserActivity.TAG, "saved");
             } catch (CouchbaseLiteException e) {

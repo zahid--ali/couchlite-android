@@ -9,4 +9,12 @@
         android:id="@+id/delete"
         android:title="@string/delete_msgs" />
 
+    <item
+        android:id="@+id/insertion_time"
+        android:title="@string/insertion_time" />
+
+    <item
+        android:id="@+id/deletion_time"
+        android:title="@string/deletion_time" />
+
 </menu>
