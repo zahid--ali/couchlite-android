@@ -1,5 +1,6 @@
 package lelab.couchdb.message;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -9,6 +10,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.couchbase.lite.CouchbaseLiteException;
@@ -24,14 +26,13 @@ import com.couchbase.lite.ResultSet;
 import com.couchbase.lite.SelectResult;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.javafaker.Faker;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
 
 import lelab.couchdb.R;
 import lelab.couchdb.TimeHelper;
@@ -48,11 +49,13 @@ public class MessageActivity extends AppCompatActivity {
     private DatabaseManager dbMgr;
     //Time Calculator
     private TimeHelper timeHelper;
+    private ProgressBar pbMessage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.message_activity);
+        pbMessage = findViewById(R.id.pb_message);
         tvNoData = findViewById(R.id.tv_no_data);
         userID = getIntent().getStringExtra("userID");
         dbMgr = new DatabaseManager(this);
@@ -68,8 +71,7 @@ public class MessageActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                addMessageToDb();
-                getMessageDbData();
+                new AddMessageTask().execute();
             }
         });
     }
@@ -85,13 +87,10 @@ public class MessageActivity extends AppCompatActivity {
         int id = item.getItemId();
         switch (id) {
             case R.id.update:
-                updateAllMessages();
-                getMessageDbData();
+                new UpdateMessageTask().execute();
                 return true;
             case R.id.delete:
-                deleteAllMessages();
-                //try to get from db rather than showing "no data" all together
-                getMessageDbData();
+                new DeleteMessageTask().execute();
                 return true;
             case R.id.insertion_time:
                 timeHelper.avgInsertTimeDisplay();
@@ -108,10 +107,15 @@ public class MessageActivity extends AppCompatActivity {
     private void updateAllMessages() {
         List<String> idList = messageAdapter.getIds();
         for (String id : idList) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:sss", Locale.US);
-            String currentDT = sdf.format(new Date());
+            Faker faker = new Faker();
 
-            Message message = new Message(id, "", "", "", "", "", "", false, "", "", "", "", currentDT, currentDT, "");
+            String msg = faker.shakespeare().asYouLikeItQuote();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd MMM, yyyy", Locale.getDefault());
+            String receivedAt = sdf.format(faker.date().birthday());
+            String createdAt = sdf.format(faker.date().birthday());
+            Log.d(UserActivity.TAG, "id " + id + " msg " + msg + " receivedAt " + receivedAt + " createdAt " + createdAt);
+
+            Message message = new Message(id, msg, "", "", "", "", "", "", false, "", "", "", "", receivedAt, createdAt, "");
 
             ObjectMapper objectMapper1 = new ObjectMapper();
             objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -151,11 +155,16 @@ public class MessageActivity extends AppCompatActivity {
 
     private void addMessageToDb() {
         for (int i = 0; i < count; i++) {
-            String id = getRandomNo(10000);
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:sss", Locale.US);
-            String currentDT = sdf.format(new Date());
+            Faker faker = new Faker();
 
-            Message message = new Message(id, "", "", "", "", "", "", false, "", "", "", "", currentDT, currentDT, "");
+            String id = faker.idNumber().valid();
+            String msg = faker.shakespeare().asYouLikeItQuote();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd MMM, yyyy", Locale.getDefault());
+            String receivedAt = sdf.format(faker.date().birthday());
+            String createdAt = sdf.format(faker.date().birthday());
+            Log.d(UserActivity.TAG, "id " + id + " msg " + msg + " receivedAt " + receivedAt + " createdAt " + createdAt);
+
+            Message message = new Message(id, msg, "", "", "", "", "", "", false, "", "", "", "", receivedAt, createdAt, "");
 
             ObjectMapper objectMapper1 = new ObjectMapper();
             objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -201,6 +210,7 @@ public class MessageActivity extends AppCompatActivity {
                 messages.add(message1);
             }
             Log.d(UserActivity.TAG, ": " + messages.size());
+            pbMessage.setVisibility(View.GONE);
             if (messages.size() == 0) {
                 tvNoData.setVisibility(View.VISIBLE);
                 messageAdapter.setMessages(new ArrayList<Message>());
@@ -213,7 +223,66 @@ public class MessageActivity extends AppCompatActivity {
         }
     }
 
-    private String getRandomNo(final int max) {
-        return "" + new Random().nextInt(max);
+    private class AddMessageTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pbMessage.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            addMessageToDb();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            getMessageDbData();
+            super.onPostExecute(aVoid);
+        }
+    }
+
+    private class UpdateMessageTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pbMessage.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            updateAllMessages();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            getMessageDbData();
+            super.onPostExecute(aVoid);
+        }
+    }
+
+    private class DeleteMessageTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pbMessage.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            deleteAllMessages();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            getMessageDbData();
+            super.onPostExecute(aVoid);
+        }
     }
 }

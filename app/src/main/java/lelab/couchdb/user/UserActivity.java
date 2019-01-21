@@ -1,5 +1,6 @@
 package lelab.couchdb.user;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -9,6 +10,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,11 +27,11 @@ import com.couchbase.lite.ResultSet;
 import com.couchbase.lite.SelectResult;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.javafaker.Faker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 
 import lelab.couchdb.R;
 import lelab.couchdb.TimeHelper;
@@ -46,10 +48,13 @@ public class UserActivity extends AppCompatActivity {
     //Time Calculator
     private TimeHelper timeHelper;
 
+    private ProgressBar pbUser;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_activity);
+        pbUser = findViewById(R.id.pb_user);
         tvNoData = findViewById(R.id.tv_no_data);
         dbMgr = new DatabaseManager(this);
         timeHelper = new TimeHelper(this, dbMgr);
@@ -64,8 +69,10 @@ public class UserActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                addUserToDb();
-                getUserDbData();
+//                pbUser.setVisibility(View.VISIBLE);
+//                addUserToDb();
+//                getUserDbData();
+                new AddUserTask().execute();
             }
         });
     }
@@ -84,13 +91,10 @@ public class UserActivity extends AppCompatActivity {
                 selectData();
                 return true;
             case R.id.update:
-                updateAllUsers();
-                getUserDbData();
+                new UpdateUserTask().execute();
                 return true;
             case R.id.delete:
-                deleteAllUsers();
-                //try to get from db rather than showing "no data" all together
-                getUserDbData();
+                new DeleteUserTask().execute();
                 return true;
             case R.id.insertion_time:
                 timeHelper.avgInsertTimeDisplay();
@@ -144,7 +148,12 @@ public class UserActivity extends AppCompatActivity {
                     // Get dictionary corresponding to the database name
                     Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
                     User user1 = objectMapper.convertValue(valueMap.toMap(), User.class);
-                    user1.setName("Nabil Updated " + id);
+
+                    Faker faker = new Faker();
+                    String name = faker.name().fullName();
+                    Log.d(TAG, "id " + id + " name " + name);
+
+                    user1.setName(name);
                     user1.setImageUrl("");
                     user1.setStatus("");
                     user1.setActive(true);
@@ -195,9 +204,14 @@ public class UserActivity extends AppCompatActivity {
 
     private void addUserToDb() {
         for (int i = 0; i < count; i++) {
-            String id = getRandomNo(10000);
-            String phNo = getRandomNo(90000);
-            User user = new User(id, "Nabil " + id, phNo, "", "", true, false, false, "", "");
+            Faker faker = new Faker();
+
+            String id = faker.idNumber().valid();
+            String phNo = faker.phoneNumber().cellPhone();
+            String name = faker.name().fullName();
+            Log.d(TAG, "id " + id + " name " + name + " phNo " + phNo);
+
+            User user = new User(id, name, phNo, "", "", true, false, false, "", "");
 
             ObjectMapper objectMapper1 = new ObjectMapper();
             objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -215,6 +229,7 @@ public class UserActivity extends AppCompatActivity {
                 double time = (end - start);
                 timeHelper.saveInsertionTime(time);
                 Log.d(TAG, "Adding a data takes: " + time + "ms");
+
                 //Log.d(TAG, "saved");
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
@@ -242,6 +257,7 @@ public class UserActivity extends AppCompatActivity {
                 users.add(user1);
             }
             Log.d(TAG, ": " + users.size());
+            pbUser.setVisibility(View.GONE);
             if (users.size() == 0) {
                 tvNoData.setVisibility(View.VISIBLE);
                 userAdapter.setUsers(new ArrayList<User>());
@@ -254,7 +270,66 @@ public class UserActivity extends AppCompatActivity {
         }
     }
 
-    private String getRandomNo(final int max) {
-        return "" + new Random().nextInt(max);
+    private class AddUserTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pbUser.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            addUserToDb();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            getUserDbData();
+            super.onPostExecute(aVoid);
+        }
+    }
+
+    private class UpdateUserTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pbUser.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            updateAllUsers();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            getUserDbData();
+            super.onPostExecute(aVoid);
+        }
+    }
+
+    private class DeleteUserTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pbUser.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            deleteAllUsers();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            getUserDbData();
+            super.onPostExecute(aVoid);
+        }
     }
 }

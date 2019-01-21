@@ -3,6 +3,7 @@ package lelab.couchdb.model;
 
 public class Message {
     private String id;
+    private String msgTxt;
     private String conversationId;
     private String senderId;
     private String messageType;
@@ -21,8 +22,9 @@ public class Message {
     public Message() {
     }
 
-    public Message(String id, String conversationId, String senderId, String messageType, String messageStatus, String mediaUrl, String mediaMimeType, Boolean isStarred, String mediaSize, String media_name, String latitude, String longitude, String receivedAt, String createdAt, String deletedAt) {
+    public Message(String id, String msgTxt, String conversationId, String senderId, String messageType, String messageStatus, String mediaUrl, String mediaMimeType, Boolean isStarred, String mediaSize, String media_name, String latitude, String longitude, String receivedAt, String createdAt, String deletedAt) {
         this.id = id;
+        this.msgTxt = msgTxt;
         this.conversationId = conversationId;
         this.senderId = senderId;
         this.messageType = messageType;
@@ -45,6 +47,14 @@ public class Message {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getMsgTxt() {
+        return msgTxt;
+    }
+
+    public void setMsgTxt(String msgTxt) {
+        this.msgTxt = msgTxt;
     }
 
     public String getConversationId() {

@@ -22,11 +22,13 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public TextView id;
         public TextView received;
+        public TextView myMessage;
 
         public ViewHolder(View itemView) {
             super(itemView);
             id = itemView.findViewById(R.id.id);
             received = itemView.findViewById(R.id.received);
+            myMessage = itemView.findViewById(R.id.my_message);
         }
     }
 
@@ -66,9 +68,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Message message = messages.get(position);
-        holder.id.setText(message.getId());
-        holder.received.setText(message.getReceivedAt());
-
+        holder.id.setText("ID: " + message.getId());
+        holder.received.setText("Received At: " + message.getReceivedAt());
+        holder.myMessage.setText(message.getMsgTxt());
     }
 
     @Override
