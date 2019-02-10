@@ -30,8 +30,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import lelab.couchdb.R;
 import lelab.couchdb.TimeHelper;
@@ -39,7 +44,7 @@ import lelab.couchdb.db.DatabaseManager;
 import lelab.couchdb.model.User;
 
 public class UserActivity extends AppCompatActivity {
-    private static final int count = 10;
+    private static final int count = 1000;
     public static final String TAG = "CouchDbApp";
     private UserAdapter userAdapter;
     private TextView tvNoData;
@@ -116,9 +121,9 @@ public class UserActivity extends AppCompatActivity {
                 from(DataSource.database(dbMgr.database))
                 .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)).and(id.equalTo(Expression.string(anId))));
         try {
-            long start2 = System.currentTimeMillis();
+            long start2 = System.nanoTime();
             query.execute();
-            long end2 = System.currentTimeMillis();
+            long end2 = System.nanoTime();
             double time2 = (end2 - start2);
             Log.d(TAG, "Select * where id: " + anId + " takes: " + time2 + "ms");
             Toast.makeText(this, "Select * where id: " + anId + " takes: " + time2 + "ms", Toast.LENGTH_SHORT).show();
@@ -190,9 +195,9 @@ public class UserActivity extends AppCompatActivity {
             Document doc = dbMgr.database.getDocument(id);
 
             try {
-                long start2 = System.currentTimeMillis();
+                long start2 = System.nanoTime();
                 dbMgr.database.delete(doc);
-                long end2 = System.currentTimeMillis();
+                long end2 = System.nanoTime();
                 double time2 = (end2 - start2);
                 timeHelper.saveDeletionTime(time2);
                 Log.d(TAG, "Deleting a user takes: " + time2 + "ms");
@@ -203,15 +208,23 @@ public class UserActivity extends AppCompatActivity {
     }
 
     private void addUserToDb() {
+        Calendar calRange = new GregorianCalendar();
+        Date todayDateRange = calRange.getTime();
+        calRange.add(Calendar.YEAR, -1);
+        Date oldDateRange = calRange.getTime();
+        ArrayList<Integer> listIds = new ArrayList<Integer>();
+        for (int i = 1; i <= count; i++) {
+            listIds.add(i);
+        }
+        Collections.shuffle(listIds);
+        long time = 0;
         for (int i = 0; i < count; i++) {
             Faker faker = new Faker();
-
-            String id = faker.idNumber().valid();
+            String id = String.valueOf(listIds.get(i));
             String phNo = faker.phoneNumber().cellPhone();
             String name = faker.name().fullName();
-            Log.d(TAG, "id " + id + " name " + name + " phNo " + phNo);
 
-            User user = new User(id, name, phNo, "", "", true, false, false, "", "");
+            User user = new User(id, name, phNo, faker.internet().image(), faker.shakespeare().romeoAndJulietQuote(), isPrime(i), false, isPrime(i), faker.date().between(oldDateRange, todayDateRange).toString(), "");
 
             ObjectMapper objectMapper1 = new ObjectMapper();
             objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -223,18 +236,17 @@ public class UserActivity extends AppCompatActivity {
 
             //Save document to database.
             try {
-                long start = System.currentTimeMillis();
+                long start = System.nanoTime();
                 dbMgr.database.save(doc);
-                long end = System.currentTimeMillis();
-                double time = (end - start);
-                timeHelper.saveInsertionTime(time);
-                Log.d(TAG, "Adding a data takes: " + time + "ms");
+                long end = System.nanoTime();
+                time += (end - start);
 
                 //Log.d(TAG, "saved");
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
             }
         }
+        Log.d(TAG, "Adding a data takes: " + TimeUnit.NANOSECONDS.toSeconds(time) + " s");
     }
 
     private void getUserDbData() {
@@ -332,4 +344,14 @@ public class UserActivity extends AppCompatActivity {
             super.onPostExecute(aVoid);
         }
     }
+
+    public static boolean isPrime(int num) {
+        if (num < 2) return false;
+        if (num == 2) return true;
+        if (num % 2 == 0) return false;
+        for (int i = 3; i * i <= num; i += 2)
+            if (num % i == 0) return false;
+        return true;
+    }
+
 }
