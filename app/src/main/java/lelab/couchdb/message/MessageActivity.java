@@ -30,6 +30,10 @@ import com.github.javafaker.Faker;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -41,7 +45,7 @@ import lelab.couchdb.model.Message;
 import lelab.couchdb.user.UserActivity;
 
 public class MessageActivity extends AppCompatActivity {
-    private static final int count = 10;
+    private static final int count = 1000;
     private String userID;
     private MessageAdapter messageAdapter;
     private TextView tvNoData;
@@ -154,10 +158,18 @@ public class MessageActivity extends AppCompatActivity {
     }
 
     private void addMessageToDb() {
+        ArrayList<Integer> listIds = new ArrayList<Integer>();
+        for (int i = 1; i <= count; i++) {
+            listIds.add(i);
+        }
+        Collections.shuffle(listIds);
+        Date todayDate = new Date();
+        Calendar cal = new GregorianCalendar();
+        cal.add(Calendar.YEAR, -1);
+        Date oldDate = cal.getTime();
         for (int i = 0; i < count; i++) {
             Faker faker = new Faker();
-
-            String id = faker.idNumber().valid();
+            String id = String.valueOf(listIds.get(i));
             String msg = faker.shakespeare().asYouLikeItQuote();
             SimpleDateFormat sdf = new SimpleDateFormat("dd MMM, yyyy", Locale.getDefault());
             String receivedAt = sdf.format(faker.date().birthday());

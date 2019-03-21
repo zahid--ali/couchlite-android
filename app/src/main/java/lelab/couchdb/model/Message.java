@@ -3,18 +3,18 @@ package lelab.couchdb.model;
 
 public class Message {
     private String id;
+    private int conversationId;
+    private int senderId;
+    private int messageType;
     private String msgTxt;
-    private String conversationId;
-    private String senderId;
-    private String messageType;
     private String messageStatus;
     private String mediaUrl;
     private String mediaMimeType;
     private Boolean isStarred;
-    private String mediaSize;
+    private double mediaSize;
     private String media_name;
-    private String latitude;
-    private String longitude;
+    private double latitude;
+    private double longitude;
     private String receivedAt;
     private String createdAt;
     private String deletedAt;
@@ -22,7 +22,7 @@ public class Message {
     public Message() {
     }
 
-    public Message(String id, String msgTxt, String conversationId, String senderId, String messageType, String messageStatus, String mediaUrl, String mediaMimeType, Boolean isStarred, String mediaSize, String media_name, String latitude, String longitude, String receivedAt, String createdAt, String deletedAt) {
+    public Message(String id, String msgTxt, int conversationId, int senderId, int messageType, String messageStatus, String mediaUrl, String mediaMimeType, Boolean isStarred, double mediaSize, String media_name, double latitude, double longitude, String receivedAt, String createdAt, String deletedAt) {
         this.id = id;
         this.msgTxt = msgTxt;
         this.conversationId = conversationId;
@@ -49,36 +49,36 @@ public class Message {
         this.id = id;
     }
 
+    public int getConversationId() {
+        return conversationId;
+    }
+
+    public void setConversationId(int conversationId) {
+        this.conversationId = conversationId;
+    }
+
+    public int getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(int senderId) {
+        this.senderId = senderId;
+    }
+
+    public int getMessageType() {
+        return messageType;
+    }
+
+    public void setMessageType(int messageType) {
+        this.messageType = messageType;
+    }
+
     public String getMsgTxt() {
         return msgTxt;
     }
 
     public void setMsgTxt(String msgTxt) {
         this.msgTxt = msgTxt;
-    }
-
-    public String getConversationId() {
-        return conversationId;
-    }
-
-    public void setConversationId(String conversationId) {
-        this.conversationId = conversationId;
-    }
-
-    public String getSenderId() {
-        return senderId;
-    }
-
-    public void setSenderId(String senderId) {
-        this.senderId = senderId;
-    }
-
-    public String getMessageType() {
-        return messageType;
-    }
-
-    public void setMessageType(String messageType) {
-        this.messageType = messageType;
     }
 
     public String getMessageStatus() {
@@ -113,11 +113,11 @@ public class Message {
         isStarred = starred;
     }
 
-    public String getMediaSize() {
+    public double getMediaSize() {
         return mediaSize;
     }
 
-    public void setMediaSize(String mediaSize) {
+    public void setMediaSize(double mediaSize) {
         this.mediaSize = mediaSize;
     }
 
@@ -129,19 +129,19 @@ public class Message {
         this.media_name = media_name;
     }
 
-    public String getLatitude() {
+    public double getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(String latitude) {
+    public void setLatitude(double latitude) {
         this.latitude = latitude;
     }
 
-    public String getLongitude() {
+    public double getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(String longitude) {
+    public void setLongitude(double longitude) {
         this.longitude = longitude;
     }
 
