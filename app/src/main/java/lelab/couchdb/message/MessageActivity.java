@@ -37,6 +37,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import lelab.couchdb.R;
 import lelab.couchdb.TimeHelper;
@@ -45,7 +46,7 @@ import lelab.couchdb.model.Message;
 import lelab.couchdb.user.UserActivity;
 
 public class MessageActivity extends AppCompatActivity {
-    private static final int count = 1000;
+    private static final int count = 5000;
     private String userID;
     private MessageAdapter messageAdapter;
     private TextView tvNoData;
@@ -108,120 +109,145 @@ public class MessageActivity extends AppCompatActivity {
     }
 
     //updating technique 2
-    private void updateAllMessages() {
-        List<String> idList = messageAdapter.getIds();
-        for (String id : idList) {
-            Faker faker = new Faker();
-
-            String msg = faker.shakespeare().asYouLikeItQuote();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd MMM, yyyy", Locale.getDefault());
-            String receivedAt = sdf.format(faker.date().birthday());
-            String createdAt = sdf.format(faker.date().birthday());
-            Log.d(UserActivity.TAG, "id " + id + " msg " + msg + " receivedAt " + receivedAt + " createdAt " + createdAt);
-
-            Message message = new Message(id, msg, "", "", "", "", "", "", false, "", "", "", "", receivedAt, createdAt, "");
-
-            ObjectMapper objectMapper1 = new ObjectMapper();
-            objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-            HashMap<String, Object> messageMap = objectMapper1.convertValue(message, HashMap.class);
-            MutableDocument doc = new MutableDocument(id, messageMap);
-            doc.setString("type", DatabaseManager.MESSAGE_TABLE);
-            doc.setString("userID", userID);
-
-            //Save document to database.
-            try {
-                dbMgr.database.save(doc);
-                //Log.d(UserActivity.TAG, "saved");
-            } catch (CouchbaseLiteException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+//    private void updateAllMessages() {
+//        List<String> idList = messageAdapter.getIds();
+//        for (String id : idList) {
+//            Faker faker = new Faker();
+//
+//            String msg = faker.shakespeare().asYouLikeItQuote();
+//            SimpleDateFormat sdf = new SimpleDateFormat("dd MMM, yyyy", Locale.getDefault());
+//            String receivedAt = sdf.format(faker.date().birthday());
+//            String createdAt = sdf.format(faker.date().birthday());
+//
+//            Message message = new Message(id, msg, "", "", "", "", "", "", false, "", "", "", "", receivedAt, createdAt, "");
+//
+//            ObjectMapper objectMapper1 = new ObjectMapper();
+//            objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+//
+//            HashMap<String, Object> messageMap = objectMapper1.convertValue(message, HashMap.class);
+//            MutableDocument doc = new MutableDocument(id, messageMap);
+//            doc.setString("type", DatabaseManager.MESSAGE_TABLE);
+//            doc.setString("userID", userID);
+//
+//            //Save document to database.
+//            try {
+//                dbMgr.database.save(doc);
+//                //Log.d(UserActivity.TAG, "saved");
+//            } catch (CouchbaseLiteException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
 
     private void deleteAllMessages() {
         List<String> idList = messageAdapter.getIds();
+        long time = 0;
         for (String id : idList) {
             Document doc = dbMgr.database.getDocument(id);
 
             try {
-                long start = System.currentTimeMillis();
+                long start = System.nanoTime();
                 dbMgr.database.delete(doc);
-                long end = System.currentTimeMillis();
-                double time = (end - start);
+                long end = System.nanoTime();
+                time += (end - start);
                 timeHelper.saveDeletionTime(time);
-                Log.d(UserActivity.TAG, "Deleting a message takes: " + time + "ms");
+
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
             }
         }
+
     }
 
     private void addMessageToDb() {
         ArrayList<Integer> listIds = new ArrayList<Integer>();
-        for (int i = 1; i <= count; i++) {
+        for (int i = 10; i <= (count + 10); i++) {
             listIds.add(i);
         }
         Collections.shuffle(listIds);
+        long time = 0;
         Date todayDate = new Date();
         Calendar cal = new GregorianCalendar();
         cal.add(Calendar.YEAR, -1);
         Date oldDate = cal.getTime();
+        Faker faker = new Faker();
+        String id = "";
+        long start, end;
         for (int i = 0; i < count; i++) {
-            Faker faker = new Faker();
-            String id = String.valueOf(listIds.get(i));
-            String msg = faker.shakespeare().asYouLikeItQuote();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd MMM, yyyy", Locale.getDefault());
-            String receivedAt = sdf.format(faker.date().birthday());
-            String createdAt = sdf.format(faker.date().birthday());
-            Log.d(UserActivity.TAG, "id " + id + " msg " + msg + " receivedAt " + receivedAt + " createdAt " + createdAt);
+            id = String.valueOf(listIds.get(i));
+            Message messageModel = new Message();
+            messageModel.setId(id);
+            messageModel.setConversationId(faker.number().numberBetween(1, 35));
+            //0 for plain text message
+            //1 for  media message
+            //2 for plain text with media message
+            messageModel.setMessageType(faker.number().numberBetween(0, 3));
 
-            Message message = new Message(id, msg, "", "", "", "", "", "", false, "", "", "", "", receivedAt, createdAt, "");
+            //adding message to type 0 or 2
+            if (messageModel.getMessageType() == 0 || messageModel.getMessageType() == 2) {
+                messageModel.setMsgTxt(faker.lorem().sentence(faker.number().numberBetween(5, 1000)));
+            }
+            //adding media to type 1 or 2
+            if (messageModel.getMessageType() == 1 || messageModel.getMessageType() == 2) {
+                messageModel.setMediaMimeType(mimeType[faker.number().numberBetween(0, 7)]);
+                messageModel.setMedia_name(faker.name().title());
+                messageModel.setMediaSize(faker.number().numberBetween(1, 100000));
+                messageModel.setMediaUrl(faker.internet().url());
+            }
+            messageModel.setMessageStatus(message_status[faker.number().numberBetween(0, 5)]);
+            messageModel.setStarred(i % 2 == 0);
+            messageModel.setCreatedAt(faker.date().between(oldDate, todayDate).toString());
+            messageModel.setReceivedAt(faker.date().between(oldDate, todayDate).toString());
+            messageModel.setSenderId(faker.number().numberBetween(5, 1000));
 
             ObjectMapper objectMapper1 = new ObjectMapper();
             objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-            HashMap<String, Object> messageMap = objectMapper1.convertValue(message, HashMap.class);
+            HashMap<String, Object> messageMap = objectMapper1.convertValue(messageModel, HashMap.class);
             MutableDocument doc = new MutableDocument(id, messageMap);
             doc.setString("type", DatabaseManager.MESSAGE_TABLE);
             doc.setString("userID", userID);
 
             //Save document to database.
             try {
-                long start = System.currentTimeMillis();
+                start = System.nanoTime();
                 dbMgr.database.save(doc);
-                long end = System.currentTimeMillis();
-                double time = (end - start);
-                timeHelper.saveInsertionTime(time);
-                Log.d(UserActivity.TAG, "Adding a message takes: " + time + "ms");
+                end = System.nanoTime();
+                time += (end - start);
                 //Log.d(UserActivity.TAG, "saved");
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
             }
         }
+        Log.d(UserActivity.TAG, "Adding 1000  messages takes: " + TimeUnit.NANOSECONDS.toSeconds(time) + "s");
     }
 
     private void getMessageDbData() {
+        Faker faker = new Faker();
         Expression expression1 = Expression.property("type");
-        Expression expression2 = Expression.property("userID");
+        Expression expression2 = Expression.property("conversationId");
         Query query = QueryBuilder.
                 select(SelectResult.all()).
                 from(DataSource.database(dbMgr.database))
-                .where(expression1.equalTo(Expression.string(DatabaseManager.MESSAGE_TABLE)).and(expression2.equalTo(Expression.string(userID))));
+                .where(expression1.equalTo(Expression.string(DatabaseManager.MESSAGE_TABLE)).and(expression2.equalTo(Expression.intValue(faker.number().numberBetween(1, 17)))));
+        long start, end, time = 0;
+
         try {
+            start = System.nanoTime();
             ResultSet results = query.execute();
+            time += System.nanoTime() - start;
             Result row;
             List<Message> messages = new ArrayList<>();
-            while ((row = results.next()) != null) {
-                ObjectMapper objectMapper = new ObjectMapper();
-                objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-                // Get dictionary corresponding to the database name
-                Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
-                Message message1 = objectMapper.convertValue(valueMap.toMap(), Message.class);
-                messages.add(message1);
-            }
-            Log.d(UserActivity.TAG, ": " + messages.size());
+//            while ((row = results.next()) != null) {
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+//
+//                // Get dictionary corresponding to the database name
+//                Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
+//                Message message1 = objectMapper.convertValue(valueMap.toMap(), Message.class);
+//                messages.add(message1);
+//            }
+            Log.d("time taken", TimeUnit.NANOSECONDS.toMillis(time) + " ms");
             pbMessage.setVisibility(View.GONE);
             if (messages.size() == 0) {
                 tvNoData.setVisibility(View.VISIBLE);
@@ -266,7 +292,7 @@ public class MessageActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... voids) {
-            updateAllMessages();
+//            updateAllMessages();
             return null;
         }
 
@@ -297,4 +323,23 @@ public class MessageActivity extends AppCompatActivity {
             super.onPostExecute(aVoid);
         }
     }
+
+
+    public static String message_status[] = {
+            "message successfully sent",
+            "pending",
+            "message successfully delivered",
+            "message sending failed",
+            "message read"
+    };
+
+    public static String mimeType[] = {
+            "audio",
+            "video",
+            "image",
+            "text/vcard",
+            "text/plain",
+            "pdf",
+            "doc"
+    };
 }

@@ -44,7 +44,7 @@ import lelab.couchdb.db.DatabaseManager;
 import lelab.couchdb.model.User;
 
 public class UserActivity extends AppCompatActivity {
-    private static final int count = 1000;
+    private static final int count = 10;
     public static final String TAG = "CouchDbApp";
     private UserAdapter userAdapter;
     private TextView tvNoData;
@@ -191,6 +191,7 @@ public class UserActivity extends AppCompatActivity {
 
     private void deleteAllUsers() {
         List<String> idList = userAdapter.getIds();
+        long time = 0;
         for (String id : idList) {
             Document doc = dbMgr.database.getDocument(id);
 
@@ -198,13 +199,12 @@ public class UserActivity extends AppCompatActivity {
                 long start2 = System.nanoTime();
                 dbMgr.database.delete(doc);
                 long end2 = System.nanoTime();
-                double time2 = (end2 - start2);
-                timeHelper.saveDeletionTime(time2);
-                Log.d(TAG, "Deleting a user takes: " + time2 + "ms");
+                time += (end2- start2);
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
             }
         }
+        Log.d(UserActivity.TAG, "Deleting 2000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     private void addUserToDb() {
