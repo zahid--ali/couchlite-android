@@ -6,10 +6,14 @@
         android:id="@+id/fetch"
         android:title="@string/fetch" />
 
+    <item
+        android:id="@+id/search"
+        android:title="@string/search" />
+
 
     <item
         android:id="@+id/aggregation"
-        android:title="@string/Aggregation" />
+        android:title="@string/aggregation" />
     <item
         android:id="@+id/join"
         android:title="@string/join" />

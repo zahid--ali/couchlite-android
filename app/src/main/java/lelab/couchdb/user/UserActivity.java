@@ -12,7 +12,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.DataSource;
@@ -45,7 +44,7 @@ import lelab.couchdb.db.DatabaseManager;
 import lelab.couchdb.model.User;
 
 public class UserActivity extends AppCompatActivity {
-    private static final int count = 10;
+    private static final int count = 4000;
     public static final String TAG = "CouchDbApp";
     private UserAdapter userAdapter;
     private TextView tvNoData;
@@ -94,7 +93,10 @@ public class UserActivity extends AppCompatActivity {
         int id = item.getItemId();
         switch (id) {
             case R.id.fetch:
-                selectData();
+                new FetchUserTask().execute();
+                return true;
+            case R.id.search:
+                new SearchUserTask().execute();
                 return true;
             case R.id.update:
                 new UpdateUserTask().execute();
@@ -116,23 +118,48 @@ public class UserActivity extends AppCompatActivity {
     }
 
     private void selectData() {
-        String anId = userAdapter.getAnId();
         Expression key = Expression.property("type");
         Expression id = Expression.property("id");
-        Query query = QueryBuilder.
-                select(SelectResult.all()).
-                from(DataSource.database(dbMgr.database))
-                .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)).and(id.equalTo(Expression.string(anId))));
-        try {
-            long start2 = System.nanoTime();
-            query.execute();
-            long end2 = System.nanoTime();
-            double time2 = (end2 - start2);
-            Log.d(TAG, "Select * where id: " + anId + " takes: " + time2 + "ms");
-            Toast.makeText(this, "Select * where id: " + anId + " takes: " + time2 + "ms", Toast.LENGTH_SHORT).show();
-        } catch (CouchbaseLiteException e) {
-            e.printStackTrace();
+        Faker faker = new Faker();
+        long time = 0;
+        for (int i = 0; i < count; i++) {
+            Query query = QueryBuilder.
+                    select(SelectResult.all()).
+                    from(DataSource.database(dbMgr.database))
+                    .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)).and(id.equalTo(Expression.string(faker.random().nextInt(0, 999).toString()))));
+
+            try {
+                long start = System.nanoTime();
+                query.execute();
+                time += (System.nanoTime() - start);
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
         }
+        Log.d(UserActivity.TAG, "Fetching a users by id 4000 times takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+    }
+
+    private void searchData() {
+        Expression key = Expression.property("type");
+        Expression name = Expression.property("name");
+        Faker faker = new Faker();
+        long time = 0;
+        for (int i = 0; i < count; i++) {
+            String randomName = "%" + faker.name().firstName() + "%";
+            Query query = QueryBuilder.
+                    select(SelectResult.all()).
+                    from(DataSource.database(dbMgr.database))
+                    .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE))
+                            .and(Function.lower(name).like(Function.lower(Expression.string(randomName)))));
+            try {
+                long start = System.nanoTime();
+                query.execute();
+                time += (System.nanoTime() - start);
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
+        }
+        Log.d(UserActivity.TAG, "Search a users by name 4000 takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     //updating technique 1
@@ -165,7 +192,7 @@ public class UserActivity extends AppCompatActivity {
 
                     user1.setImageUrl(faker.internet().image());
                     user1.setStatus(faker.shakespeare().romeoAndJulietQuote());
-                    user1.setActive(faker.number().numberBetween(1, 100) % 2 == 0);
+                    user1.setActive(faker.number().numberBetween(1, 40000) % 2 == 0);
                     user1.setReported(false);
                     user1.setBlocked(false);
                     user1.setUpdatedAt(faker.date().between(oldDateRange, todayDateRange));
@@ -193,7 +220,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Updating 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+        Log.d(UserActivity.TAG, "Updating 4000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     private void deleteAllUsers() {
@@ -211,7 +238,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Deleting 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(UserActivity.TAG, "Deleting 4000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
     }
 
     private void addUserToDb() {
@@ -251,7 +278,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(TAG, "Adding 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(TAG, "Adding 4000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
     }
 
     private void getUserDbData() {
@@ -294,21 +321,18 @@ public class UserActivity extends AppCompatActivity {
                 select(SelectResult.expression(Function.count(Expression.all())))
                 .from(DataSource.database(dbMgr.database))
                 .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE))
-                .and(Expression.property("active").equalTo(Expression.booleanValue(true))));
-        try {
-            start = System.nanoTime();
-            ResultSet results = query.execute();
-            Result row;
+                        .and(Expression.property("active").equalTo(Expression.booleanValue(true))));
+        for (int i = 0; i < count; i++) {
+            try {
+                start = System.nanoTime();
+                query.execute();
+                time += (System.nanoTime() - start);
 
-            while ((row = results.next()) != null) {
-                Log.d("Counting isActive user", String.valueOf(row.getLong("isActive")));
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
             }
-            time += System.nanoTime() - start;
-
-        } catch (CouchbaseLiteException e) {
-            e.printStackTrace();
         }
-        Log.d(UserActivity.TAG, "Ranging in 1000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(UserActivity.TAG, "Aggregate in 4000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
         return users;
     }
 
@@ -321,35 +345,26 @@ public class UserActivity extends AppCompatActivity {
         Date oldDateRange = calRange.getTime();
         Faker fakerRange = new Faker();
         Date fromDateRange, toDateRange;
-        fromDateRange = fakerRange.date().between(oldDateRange, todayDateRange);
-        toDateRange = fakerRange.date().between(fromDateRange, todayDateRange);
-
         Expression key = Expression.property("type");
         Expression key1 = Expression.property("createdAt");
-        Query query = QueryBuilder.
-                select(SelectResult.all()).
-                from(DataSource.database(dbMgr.database))
-                .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)).and(Expression.property("createdAt").between(Expression.longValue(oldDateRange.getTime()), Expression.longValue(todayDateRange.getTime()))));
-        try {
-            start = System.nanoTime();
-            ResultSet results = query.execute();
-            Result row;
+        for (int i = 0; i < count; i++) {
+        fromDateRange = fakerRange.date().between(oldDateRange, todayDateRange);
+        toDateRange = fakerRange.date().between(fromDateRange, todayDateRange);
+            Query query = QueryBuilder.
+                    select(SelectResult.all()).
+                    from(DataSource.database(dbMgr.database))
+                    .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)).and(Expression.property("createdAt").between(Expression.longValue(oldDateRange.getTime()), Expression.longValue(toDateRange.getTime()))));
 
-            while ((row = results.next()) != null) {
-                ObjectMapper objectMapper = new ObjectMapper();
-                objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            try {
+                start = System.nanoTime();
+                query.execute();
+                time += (System.nanoTime() - start);
 
-                // Get dictionary corresponding to the database name
-                Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
-                User user1 = objectMapper.convertValue(valueMap.toMap(), User.class);
-                users.add(user1);
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
             }
-            time += System.nanoTime() - start;
-
-        } catch (CouchbaseLiteException e) {
-            e.printStackTrace();
         }
-        Log.d(UserActivity.TAG, "Ranging in 1000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(UserActivity.TAG, "Ranging in 4000 users takes: " + TimeUnit.NANOSECONDS.toSeconds(time) + " s");
         return users;
 
     }
@@ -376,6 +391,48 @@ public class UserActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             getUserDbData();
+            super.onPostExecute(aVoid);
+        }
+    }
+
+    private class FetchUserTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pbUser.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            selectData();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            pbUser.setVisibility(View.GONE);
+            super.onPostExecute(aVoid);
+        }
+    }
+
+    private class SearchUserTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pbUser.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            searchData();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            pbUser.setVisibility(View.GONE);
             super.onPostExecute(aVoid);
         }
     }

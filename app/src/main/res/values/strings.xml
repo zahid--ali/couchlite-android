@@ -10,7 +10,8 @@
     <string name="insertion_time">Avg Insertion Time</string>
     <string name="deletion_time">Avg Deletion Time</string>
     <string name="fetch">Fetch</string>
-    <string name="Aggregation">Aggregation</string>
+    <string name="aggregation">Aggregation</string>
     <string name="range">Range</string>
     <string name="join">Join</string>
+    <string name="search">Search</string>
 </resources>

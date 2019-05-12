@@ -19,7 +19,7 @@
 
     <item
         android:id="@+id/aggregation"
-        android:title="@string/Aggregation" />
+        android:title="@string/aggregation" />
 
     <item
         android:id="@+id/range"
