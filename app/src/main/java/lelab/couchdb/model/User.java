@@ -1,6 +1,8 @@
 package lelab.couchdb.model;
 
 
+import java.util.Date;
+
 public class User {
     private String id;
     private String name;
@@ -10,13 +12,13 @@ public class User {
     private Boolean isActive;
     private Boolean isReported;
     private Boolean isBlocked;
-    private String createdAt;
-    private String updatedAt;
+    private Date createdAt;
+    private Date updatedAt;
 
     public User() {
     }
 
-    public User(String id, String name, String phoneNumber, String imageUrl, String status, Boolean isActive, Boolean isReported, Boolean isBlocked, String createdAt, String updatedAt) {
+    public User(String id, String name, String phoneNumber, String imageUrl, String status, Boolean isActive, Boolean isReported, Boolean isBlocked, Date createdAt, Date updatedAt) {
         this.id = id;
         this.name = name;
         this.phoneNumber = phoneNumber;
@@ -93,19 +95,19 @@ public class User {
         isBlocked = blocked;
     }
 
-    public String getCreatedAt() {
+    public Date getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
 
-    public String getUpdatedAt() {
+    public Date getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(String updatedAt) {
+    public void setUpdatedAt(Date updatedAt) {
         this.updatedAt = updatedAt;
     }
 }

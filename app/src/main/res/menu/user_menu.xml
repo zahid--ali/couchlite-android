@@ -1,24 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item
-        android:id="@+id/select"
-        android:title="@string/select" />
 
     <item
-        android:id="@+id/update"
-        android:title="@string/update_users" />
+        android:id="@+id/fetch"
+        android:title="@string/fetch" />
+
+
+    <item
+        android:id="@+id/aggregation"
+        android:title="@string/Aggregation" />
+    <item
+        android:id="@+id/join"
+        android:title="@string/join" />
+
+    <item
+        android:id="@+id/range"
+        android:title="@string/range" />
 
     <item
         android:id="@+id/delete"
         android:title="@string/delete_users" />
 
-    <item
-        android:id="@+id/insertion_time"
-        android:title="@string/insertion_time" />
 
     <item
-        android:id="@+id/deletion_time"
-        android:title="@string/deletion_time" />
+        android:id="@+id/update"
+        android:title="@string/update_users" />
 
 </menu>

@@ -19,6 +19,7 @@ import com.couchbase.lite.DataSource;
 import com.couchbase.lite.Dictionary;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Expression;
+import com.couchbase.lite.Function;
 import com.couchbase.lite.MutableDocument;
 import com.couchbase.lite.Query;
 import com.couchbase.lite.QueryBuilder;
@@ -92,7 +93,7 @@ public class UserActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.select:
+            case R.id.fetch:
                 selectData();
                 return true;
             case R.id.update:
@@ -101,11 +102,13 @@ public class UserActivity extends AppCompatActivity {
             case R.id.delete:
                 new DeleteUserTask().execute();
                 return true;
-            case R.id.insertion_time:
-                timeHelper.avgInsertTimeDisplay();
+            case R.id.range:
+                new RangeUserTask().execute();
                 return true;
-            case R.id.deletion_time:
-                timeHelper.avgDeleteTimeDisplay();
+            case R.id.aggregation:
+                new AggregateTask().execute();
+                return true;
+            case R.id.join:
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -137,7 +140,12 @@ public class UserActivity extends AppCompatActivity {
         List<String> idList = userAdapter.getIds();
         Expression key = Expression.property("type");
         Expression idExp = Expression.property("id");
-
+        long start, time = 0;
+        Faker faker = new Faker();
+        Calendar calRange = new GregorianCalendar();
+        Date todayDateRange = calRange.getTime();
+        calRange.add(Calendar.YEAR, -1);
+        Date oldDateRange = calRange.getTime();
         for (String id : idList) {
             Query query = QueryBuilder.
                     select(SelectResult.all()).
@@ -154,18 +162,13 @@ public class UserActivity extends AppCompatActivity {
                     Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
                     User user1 = objectMapper.convertValue(valueMap.toMap(), User.class);
 
-                    Faker faker = new Faker();
-                    String name = faker.name().fullName();
-                    Log.d(TAG, "id " + id + " name " + name);
 
-                    user1.setName(name);
-                    user1.setImageUrl("");
-                    user1.setStatus("");
-                    user1.setActive(true);
+                    user1.setImageUrl(faker.internet().image());
+                    user1.setStatus(faker.shakespeare().romeoAndJulietQuote());
+                    user1.setActive(faker.number().numberBetween(1, 100) % 2 == 0);
                     user1.setReported(false);
                     user1.setBlocked(false);
-                    user1.setCreatedAt("");
-                    user1.setUpdatedAt("");
+                    user1.setUpdatedAt(faker.date().between(oldDateRange, todayDateRange));
 
                     ObjectMapper objectMapper1 = new ObjectMapper();
                     objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -177,7 +180,10 @@ public class UserActivity extends AppCompatActivity {
 
                     //Save document to database.
                     try {
+                        start = System.nanoTime();
                         dbMgr.database.save(doc);
+                        time += System.nanoTime() - start;
+
                         //Log.d(TAG, "saved");
                     } catch (CouchbaseLiteException e) {
                         e.printStackTrace();
@@ -187,6 +193,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+        Log.d(UserActivity.TAG, "Updating 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     private void deleteAllUsers() {
@@ -199,12 +206,12 @@ public class UserActivity extends AppCompatActivity {
                 long start2 = System.nanoTime();
                 dbMgr.database.delete(doc);
                 long end2 = System.nanoTime();
-                time += (end2- start2);
+                time += (end2 - start2);
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Deleting 2000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+        Log.d(UserActivity.TAG, "Deleting 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
     }
 
     private void addUserToDb() {
@@ -212,6 +219,7 @@ public class UserActivity extends AppCompatActivity {
         Date todayDateRange = calRange.getTime();
         calRange.add(Calendar.YEAR, -1);
         Date oldDateRange = calRange.getTime();
+        Faker faker = new Faker();
         ArrayList<Integer> listIds = new ArrayList<Integer>();
         for (int i = 1; i <= count; i++) {
             listIds.add(i);
@@ -219,34 +227,31 @@ public class UserActivity extends AppCompatActivity {
         Collections.shuffle(listIds);
         long time = 0;
         for (int i = 0; i < count; i++) {
-            Faker faker = new Faker();
-            String id = String.valueOf(listIds.get(i));
-            String phNo = faker.phoneNumber().cellPhone();
-            String name = faker.name().fullName();
 
-            User user = new User(id, name, phNo, faker.internet().image(), faker.shakespeare().romeoAndJulietQuote(), isPrime(i), false, isPrime(i), faker.date().between(oldDateRange, todayDateRange).toString(), "");
+
+            User user = new User(String.valueOf(listIds.get(i)), faker.name().fullName(), faker.phoneNumber().cellPhone(), faker.internet().image(), faker.shakespeare().romeoAndJulietQuote(), isPrime(i), false, isPrime(i), faker.date().between(oldDateRange, todayDateRange), null);
 
             ObjectMapper objectMapper1 = new ObjectMapper();
             objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
             HashMap<String, Object> userMap = objectMapper1.convertValue(user, HashMap.class);
-            MutableDocument doc = new MutableDocument(id, userMap);
+            MutableDocument doc = new MutableDocument(String.valueOf(listIds.get(i)), userMap);
             doc.setString("type", DatabaseManager.USER_TABLE);
-            doc.setString("id", id);
+            doc.setString("id", String.valueOf(listIds.get(i)));
 
             //Save document to database.
             try {
                 long start = System.nanoTime();
                 dbMgr.database.save(doc);
                 long end = System.nanoTime();
-                time += (end - start);
+                time += System.nanoTime() - start;
 
                 //Log.d(TAG, "saved");
             } catch (CouchbaseLiteException e) {
                 e.printStackTrace();
             }
         }
-        Log.d(TAG, "Adding a data takes: " + TimeUnit.NANOSECONDS.toSeconds(time) + " s");
+        Log.d(TAG, "Adding 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
     }
 
     private void getUserDbData() {
@@ -281,6 +286,78 @@ public class UserActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
+    private List<User> aggregationQueryUser(List<User> users) {
+        long start, time = 0;
+        Expression key = Expression.property("type");
+        Query query = QueryBuilder.
+                select(SelectResult.expression(Function.count(Expression.all())))
+                .from(DataSource.database(dbMgr.database))
+                .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE))
+                .and(Expression.property("active").equalTo(Expression.booleanValue(true))));
+        try {
+            start = System.nanoTime();
+            ResultSet results = query.execute();
+            Result row;
+
+            while ((row = results.next()) != null) {
+                Log.d("Counting isActive user", String.valueOf(row.getLong("isActive")));
+            }
+            time += System.nanoTime() - start;
+
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+        Log.d(UserActivity.TAG, "Ranging in 1000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        return users;
+    }
+
+    private List<User> executeRangeQuery(List<User> users) {
+
+        long start, time = 0;
+        Calendar calRange = new GregorianCalendar();
+        Date todayDateRange = calRange.getTime();
+        calRange.add(Calendar.YEAR, -1);
+        Date oldDateRange = calRange.getTime();
+        Faker fakerRange = new Faker();
+        Date fromDateRange, toDateRange;
+        fromDateRange = fakerRange.date().between(oldDateRange, todayDateRange);
+        toDateRange = fakerRange.date().between(fromDateRange, todayDateRange);
+
+        Expression key = Expression.property("type");
+        Expression key1 = Expression.property("createdAt");
+        Query query = QueryBuilder.
+                select(SelectResult.all()).
+                from(DataSource.database(dbMgr.database))
+                .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)).and(Expression.property("createdAt").between(Expression.longValue(oldDateRange.getTime()), Expression.longValue(todayDateRange.getTime()))));
+        try {
+            start = System.nanoTime();
+            ResultSet results = query.execute();
+            Result row;
+
+            while ((row = results.next()) != null) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+                // Get dictionary corresponding to the database name
+                Dictionary valueMap = row.getDictionary(dbMgr.database.getName());
+                User user1 = objectMapper.convertValue(valueMap.toMap(), User.class);
+                users.add(user1);
+            }
+            time += System.nanoTime() - start;
+
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+        Log.d(UserActivity.TAG, "Ranging in 1000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        return users;
+
+    }
+
+    private void joinQuery() {
+        //TODO join Query
+    }
+
 
     private class AddUserTask extends AsyncTask<Void, Void, Void> {
 
@@ -342,6 +419,64 @@ public class UserActivity extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             getUserDbData();
             super.onPostExecute(aVoid);
+        }
+    }
+
+    private class RangeUserTask extends AsyncTask<Void, Void, List<User>> {
+        List<User> users = new ArrayList<>();
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pbUser.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected List<User> doInBackground(Void... voids) {
+
+            return executeRangeQuery(users);
+        }
+
+        @Override
+        protected void onPostExecute(List<User> users) {
+            super.onPostExecute(users);
+            pbUser.setVisibility(View.GONE);
+            if (users.size() == 0) {
+                tvNoData.setVisibility(View.VISIBLE);
+                userAdapter.setUsers(new ArrayList<User>());
+            } else {
+                tvNoData.setVisibility(View.GONE);
+                userAdapter.setUsers(users);
+            }
+        }
+    }
+
+    private class AggregateTask extends AsyncTask<Void, Void, List<User>> {
+        List<User> users = new ArrayList<>();
+
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pbUser.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected List<User> doInBackground(Void... voids) {
+            return aggregationQueryUser(users);
+        }
+
+        @Override
+        protected void onPostExecute(List<User> users) {
+            super.onPostExecute(users);
+            pbUser.setVisibility(View.GONE);
+            if (users.size() == 0) {
+                tvNoData.setVisibility(View.VISIBLE);
+                userAdapter.setUsers(new ArrayList<User>());
+            } else {
+                tvNoData.setVisibility(View.GONE);
+                userAdapter.setUsers(users);
+            }
         }
     }
 

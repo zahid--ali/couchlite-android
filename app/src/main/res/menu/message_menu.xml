@@ -17,4 +17,12 @@
         android:id="@+id/deletion_time"
         android:title="@string/deletion_time" />
 
+    <item
+        android:id="@+id/aggregation"
+        android:title="@string/Aggregation" />
+
+    <item
+        android:id="@+id/range"
+        android:title="@string/range" />
+
 </menu>
