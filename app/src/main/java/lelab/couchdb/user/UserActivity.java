@@ -44,7 +44,8 @@ import lelab.couchdb.db.DatabaseManager;
 import lelab.couchdb.model.User;
 
 public class UserActivity extends AppCompatActivity {
-    private static final int count = 10;
+    private static final int count = 1000;
+    private static final int numberOfExecution = 3000;
     public static final String TAG = "CouchDbApp";
     private UserAdapter userAdapter;
     private TextView tvNoData;
@@ -122,7 +123,7 @@ public class UserActivity extends AppCompatActivity {
         Expression id = Expression.property("id");
         Faker faker = new Faker();
         long time = 0;
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < numberOfExecution; i++) {
             Query query = QueryBuilder.
                     select(SelectResult.all()).
                     from(DataSource.database(dbMgr.database))
@@ -136,7 +137,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Fetching a users by id 10 times takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+        Log.d(UserActivity.TAG, "Fetching a users by id 5000 times takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     private void searchData() {
@@ -144,9 +145,11 @@ public class UserActivity extends AppCompatActivity {
         Expression name = Expression.property("name");
         Faker faker = new Faker();
         long time = 0;
-        for (int i = 0; i < count; i++) {
-            String randomName = "%" + faker.name().firstName() + "%";
-            Query query = QueryBuilder.
+        Query query;
+        String randomName;
+        for (int i = 0; i < numberOfExecution; i++) {
+            randomName = "%" + faker.name().firstName() + "%";
+            query = QueryBuilder.
                     select(SelectResult.all()).
                     from(DataSource.database(dbMgr.database))
                     .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE))
@@ -159,7 +162,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Search a users by name 10 takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+        Log.d(UserActivity.TAG, "Search a users by name 1000 takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     //updating technique 1
@@ -192,7 +195,7 @@ public class UserActivity extends AppCompatActivity {
 
                     user1.setImageUrl(faker.internet().image());
                     user1.setStatus(faker.shakespeare().romeoAndJulietQuote());
-                    user1.setActive(faker.number().numberBetween(1, 100) % 2 == 0);
+                    user1.setActive(faker.number().numberBetween(1, 10000) % 2 == 0);
                     user1.setReported(false);
                     user1.setBlocked(false);
                     user1.setUpdatedAt(faker.date().between(oldDateRange, todayDateRange));
@@ -220,7 +223,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Updating 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+        Log.d(UserActivity.TAG, "Updating 1000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     private void deleteAllUsers() {
@@ -238,7 +241,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Deleting 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(UserActivity.TAG, "Deleting 1000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
     }
 
     private void addUserToDb() {
@@ -278,7 +281,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(TAG, "Adding 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(TAG, "Adding 1000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
     }
 
     private void getUserDbData() {
@@ -322,7 +325,7 @@ public class UserActivity extends AppCompatActivity {
                 .from(DataSource.database(dbMgr.database))
                 .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE))
                         .and(Expression.property("active").equalTo(Expression.booleanValue(true))));
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < numberOfExecution; i++) {
             try {
                 start = System.nanoTime();
                 query.execute();
@@ -332,7 +335,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Aggregate in 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(UserActivity.TAG, "Aggregate in 1000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
         return users;
     }
 
@@ -347,10 +350,11 @@ public class UserActivity extends AppCompatActivity {
         Date fromDateRange, toDateRange;
         Expression key = Expression.property("type");
         Expression key1 = Expression.property("createdAt");
-        for (int i = 0; i < count; i++) {
-        fromDateRange = fakerRange.date().between(oldDateRange, todayDateRange);
-        toDateRange = fakerRange.date().between(fromDateRange, todayDateRange);
-            Query query = QueryBuilder.
+        Query query;
+        for (int i = 0; i < numberOfExecution; i++) {
+            fromDateRange = fakerRange.date().between(oldDateRange, todayDateRange);
+            toDateRange = fakerRange.date().between(fromDateRange, todayDateRange);
+            query = QueryBuilder.
                     select(SelectResult.all()).
                     from(DataSource.database(dbMgr.database))
                     .where(key.equalTo(Expression.string(DatabaseManager.USER_TABLE)).and(Expression.property("createdAt").between(Expression.longValue(oldDateRange.getTime()), Expression.longValue(toDateRange.getTime()))));
@@ -364,13 +368,13 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Ranging in 10 users takes: " + TimeUnit.NANOSECONDS.toSeconds(time) + " s");
+        Log.d(UserActivity.TAG, "Ranging in 1000 users takes: " + TimeUnit.NANOSECONDS.toSeconds(time) + " s");
         return users;
 
     }
 
     private void joinQuery() {
-        //TODO join Query
+
     }
 
 
@@ -498,13 +502,6 @@ public class UserActivity extends AppCompatActivity {
         protected void onPostExecute(List<User> users) {
             super.onPostExecute(users);
             pbUser.setVisibility(View.GONE);
-            if (users.size() == 0) {
-                tvNoData.setVisibility(View.VISIBLE);
-                userAdapter.setUsers(new ArrayList<User>());
-            } else {
-                tvNoData.setVisibility(View.GONE);
-                userAdapter.setUsers(users);
-            }
         }
     }
 
@@ -527,13 +524,6 @@ public class UserActivity extends AppCompatActivity {
         protected void onPostExecute(List<User> users) {
             super.onPostExecute(users);
             pbUser.setVisibility(View.GONE);
-            if (users.size() == 0) {
-                tvNoData.setVisibility(View.VISIBLE);
-                userAdapter.setUsers(new ArrayList<User>());
-            } else {
-                tvNoData.setVisibility(View.GONE);
-                userAdapter.setUsers(users);
-            }
         }
     }
 
@@ -545,5 +535,7 @@ public class UserActivity extends AppCompatActivity {
             if (num % i == 0) return false;
         return true;
     }
+
+
 
 }

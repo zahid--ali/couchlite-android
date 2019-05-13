@@ -45,7 +45,8 @@ import lelab.couchdb.model.Message;
 import lelab.couchdb.user.UserActivity;
 
 public class MessageActivity extends AppCompatActivity {
-    private static final int count = 3000;
+    private static final int count = 1000;
+    private static final int numberOfExecution = 5000;
     private String userID;
     private MessageAdapter messageAdapter;
     private TextView tvNoData;
@@ -150,13 +151,13 @@ public class MessageActivity extends AppCompatActivity {
 
                     //adding message to type 0 or 2
                     if (message.getMessageType() == 0 || message.getMessageType() == 2) {
-                        message.setMsgTxt(faker.lorem().sentence(faker.number().numberBetween(5, 3000)));
+                        message.setMsgTxt(faker.lorem().sentence(faker.number().numberBetween(5, 1000)));
                     }
                     //adding media to type 1 or 2
                     if (message.getMessageType() == 1 || message.getMessageType() == 2) {
                         message.setMediaMimeType(mimeType[faker.number().numberBetween(0, 7)]);
                         message.setMedia_name(faker.name().title());
-                        message.setMediaSize(faker.number().numberBetween(1, 300000));
+                        message.setMediaSize(faker.number().numberBetween(1, 100000));
                         message.setMediaUrl(faker.internet().url());
                     }
                     message.setMessageStatus(message_status[faker.number().numberBetween(0, 5)]);
@@ -187,7 +188,7 @@ public class MessageActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Updating 3000 messages takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+        Log.d(UserActivity.TAG, "Updating 1000 messages takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     private void deleteAllMessages() {
@@ -206,7 +207,7 @@ public class MessageActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Deleting 3000 messages takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(UserActivity.TAG, "Deleting 1000 messages takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
 
     }
 
@@ -236,20 +237,20 @@ public class MessageActivity extends AppCompatActivity {
 
             //adding message to type 0 or 2
             if (messageModel.getMessageType() == 0 || messageModel.getMessageType() == 2) {
-                messageModel.setMsgTxt(faker.lorem().sentence(faker.number().numberBetween(5, 3000)));
+                messageModel.setMsgTxt(faker.lorem().sentence(faker.number().numberBetween(5, 1000)));
             }
             //adding media to type 1 or 2
             if (messageModel.getMessageType() == 1 || messageModel.getMessageType() == 2) {
                 messageModel.setMediaMimeType(mimeType[faker.number().numberBetween(0, 7)]);
                 messageModel.setMedia_name(faker.name().title());
-                messageModel.setMediaSize(faker.number().numberBetween(1, 300000));
+                messageModel.setMediaSize(faker.number().numberBetween(1, 100000));
                 messageModel.setMediaUrl(faker.internet().url());
             }
             messageModel.setMessageStatus(message_status[faker.number().numberBetween(0, 5)]);
             messageModel.setStarred(i % 2 == 0);
             messageModel.setCreatedAt(faker.date().between(oldDate, todayDate).toString());
             messageModel.setReceivedAt(faker.date().between(oldDate, todayDate).toString());
-            messageModel.setSenderId(faker.number().numberBetween(5, 3000));
+            messageModel.setSenderId(faker.number().numberBetween(5, 1000));
 
             ObjectMapper objectMapper1 = new ObjectMapper();
             objectMapper1.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -269,7 +270,7 @@ public class MessageActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Adding 3000  messages takes: " + TimeUnit.NANOSECONDS.toSeconds(time) + "s");
+        Log.d(UserActivity.TAG, "Adding 1000  messages takes: " + TimeUnit.NANOSECONDS.toSeconds(time) + "s");
     }
 
     private void getMessageDbData() {
@@ -311,7 +312,7 @@ public class MessageActivity extends AppCompatActivity {
         Query query;
         String randomName;
         long start, time = 0;
-        for (int i = 0; i < 300; i++) {
+        for (int i = 0; i < numberOfExecution; i++) {
             try {
                 randomName = "%" + faker.lorem().word() + "%";
                 Log.d("asd", randomName);
@@ -328,7 +329,7 @@ public class MessageActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Search a message by name 4000 takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+        Log.d(UserActivity.TAG, "Search a message by keyword 3000 times takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     private void selectData() {
@@ -336,7 +337,7 @@ public class MessageActivity extends AppCompatActivity {
         Expression conversationId = Expression.property("conversationId");
         Faker faker = new Faker();
         long time = 0;
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < numberOfExecution; i++) {
             Query query = QueryBuilder.
                     select(SelectResult.all()).
                     from(DataSource.database(dbMgr.database))
@@ -362,7 +363,7 @@ public class MessageActivity extends AppCompatActivity {
                 .from(DataSource.database(dbMgr.database))
                 .where(key.equalTo(Expression.string(DatabaseManager.MESSAGE_TABLE))
                         .and(Expression.property("messageType").equalTo(Expression.intValue(faker.number().numberBetween(0, 3)))));
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < numberOfExecution; i++) {
             try {
 
                 start = System.nanoTime();
@@ -387,7 +388,7 @@ public class MessageActivity extends AppCompatActivity {
         Faker fakerRange = new Faker();
         Date fromDateRange, toDateRange;
 
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < numberOfExecution; i++) {
             fromDateRange = fakerRange.date().between(oldDateRange, todayDateRange);
             toDateRange = fakerRange.date().between(fromDateRange, todayDateRange);
             Expression key = Expression.property("type");
@@ -491,13 +492,6 @@ public class MessageActivity extends AppCompatActivity {
         protected void onPostExecute(List<Message> messages) {
             super.onPostExecute(messages);
             pbMessage.setVisibility(View.GONE);
-            if (messages.size() == 0) {
-                tvNoData.setVisibility(View.VISIBLE);
-                messageAdapter.setMessages(new ArrayList<Message>());
-            } else {
-                tvNoData.setVisibility(View.GONE);
-                messageAdapter.setMessages(messages);
-            }
         }
     }
 
@@ -520,13 +514,6 @@ public class MessageActivity extends AppCompatActivity {
         protected void onPostExecute(List<Message> messages) {
             super.onPostExecute(messages);
             pbMessage.setVisibility(View.GONE);
-            if (messages.size() == 0) {
-                tvNoData.setVisibility(View.VISIBLE);
-                messageAdapter.setMessages(new ArrayList<Message>());
-            } else {
-                tvNoData.setVisibility(View.GONE);
-                messageAdapter.setMessages(messages);
-            }
         }
     }
 
