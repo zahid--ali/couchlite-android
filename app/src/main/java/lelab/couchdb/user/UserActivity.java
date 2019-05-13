@@ -44,7 +44,7 @@ import lelab.couchdb.db.DatabaseManager;
 import lelab.couchdb.model.User;
 
 public class UserActivity extends AppCompatActivity {
-    private static final int count = 4000;
+    private static final int count = 10;
     public static final String TAG = "CouchDbApp";
     private UserAdapter userAdapter;
     private TextView tvNoData;
@@ -136,7 +136,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Fetching a users by id 4000 times takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+        Log.d(UserActivity.TAG, "Fetching a users by id 10 times takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     private void searchData() {
@@ -159,7 +159,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Search a users by name 4000 takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+        Log.d(UserActivity.TAG, "Search a users by name 10 takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     //updating technique 1
@@ -192,7 +192,7 @@ public class UserActivity extends AppCompatActivity {
 
                     user1.setImageUrl(faker.internet().image());
                     user1.setStatus(faker.shakespeare().romeoAndJulietQuote());
-                    user1.setActive(faker.number().numberBetween(1, 40000) % 2 == 0);
+                    user1.setActive(faker.number().numberBetween(1, 100) % 2 == 0);
                     user1.setReported(false);
                     user1.setBlocked(false);
                     user1.setUpdatedAt(faker.date().between(oldDateRange, todayDateRange));
@@ -220,7 +220,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Updating 4000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
+        Log.d(UserActivity.TAG, "Updating 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + "ms");
     }
 
     private void deleteAllUsers() {
@@ -238,7 +238,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Deleting 4000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(UserActivity.TAG, "Deleting 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
     }
 
     private void addUserToDb() {
@@ -278,7 +278,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(TAG, "Adding 4000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(TAG, "Adding 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
     }
 
     private void getUserDbData() {
@@ -332,7 +332,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Aggregate in 4000 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        Log.d(UserActivity.TAG, "Aggregate in 10 users takes: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
         return users;
     }
 
@@ -364,7 +364,7 @@ public class UserActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
-        Log.d(UserActivity.TAG, "Ranging in 4000 users takes: " + TimeUnit.NANOSECONDS.toSeconds(time) + " s");
+        Log.d(UserActivity.TAG, "Ranging in 10 users takes: " + TimeUnit.NANOSECONDS.toSeconds(time) + " s");
         return users;
 
     }
